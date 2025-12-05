@@ -14,6 +14,7 @@ struct TickRecord
 	Vec3 m_vOrigin = {};
 	Vec3 m_vMins = {};
 	Vec3 m_vMaxs = {};
+	Vec3 m_vAbsAngles = {};
 	bool m_bOnShot = false;
 	bool m_bInvalid = false;
 	matrix3x4 m_aBones[MAXSTUDIOBONES];

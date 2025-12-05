@@ -231,6 +231,7 @@ void CBacktrack::MakeRecords()
 			pPlayer->m_vecOrigin(),
 			pPlayer->m_vecMins(),
 			pPlayer->m_vecMaxs(),
+			pPlayer->GetEyeAngles(),
 			m_mDidShoot[pPlayer->entindex()]
 		);
 		TickRecord& tCurRecord = vRecords.front();

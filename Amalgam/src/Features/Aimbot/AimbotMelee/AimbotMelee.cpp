@@ -236,7 +236,7 @@ void CAimbotMelee::UpdateInfo(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCm
 	m_bShouldSwing = m_iDoubletapTicks <= iSwingTicks || Vars::Doubletap::AntiWarp.Value && pLocal->m_hGroundEntity();
 }
 
-bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CTFPlayer* pLocal, Vec3 vEyeAngles)
+bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CTFPlayer* pLocal, Vec3 vEyeAngles, Vec3* pTargetAngles)
 {
 	if (!pTarget->IsPlayer() || pTarget->m_iTeamNum() == pLocal->m_iTeamNum())
 		return false;
@@ -304,7 +304,8 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CTFPlayer* pLocal, Vec3 vEy
 			return flPosVsTargetViewDot > flPosVsTargetViewMinDot && flPosVsOwnerViewDot > flPosVsOwnerViewMinDot && flViewAnglesDot > flViewAnglesMinDot;
 		};
 
-	Vec3 vTargetAngles = { 0.f, H::Entities.GetEyeAngles(pTarget->entindex()).y, 0.f };
+	Vec3 vUseAngles = pTargetAngles ? *pTargetAngles : H::Entities.GetEyeAngles(pTarget->entindex());
+	Vec3 vTargetAngles = { 0.f, vUseAngles.y, 0.f };
 	if (!Vars::Aimbot::Melee::BackstabAccountPing.Value)
 	{
 		if (!TestDots(vTargetAngles))
@@ -323,84 +324,84 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CTFPlayer* pLocal, Vec3 vEy
 	return true;
 }
 
-int CAimbotMelee::CanHit(Target_t& tTarget, CTFPlayer* pLocal, CTFWeaponBase* pWeapon)
-{
-	if (Vars::Aimbot::General::Ignore.Value & Vars::Aimbot::General::IgnoreEnum::Unsimulated && H::Entities.GetChoke(tTarget.m_pEntity->entindex()) > Vars::Aimbot::General::TickTolerance.Value)
-		return false;
-
-	float flRange = SDK::AttribHookValue(m_flRange, "melee_range_multiplier", pWeapon);
-	float flHull = SDK::AttribHookValue(18, "melee_bounds_multiplier", pWeapon);
-	if (pLocal->m_flModelScale() > 1.0f)
+	int CAimbotMelee::CanHit(Target_t& tTarget, CTFPlayer* pLocal, CTFWeaponBase* pWeapon)
 	{
-		flRange *= pLocal->m_flModelScale();
-		flHull *= pLocal->m_flModelScale();
-	}
-	if (pWeapon->GetWeaponID() == TF_WEAPON_WRENCH && tTarget.m_pEntity->m_iTeamNum() == pLocal->m_iTeamNum())
-	{
-		flRange = 70;
-		flHull = 18;
-	}
-	Vec3 vSwingMins = { -flHull, -flHull, -flHull };
-	Vec3 vSwingMaxs = { flHull, flHull, flHull };
-	auto& vSimRecords = m_mRecordMap[tTarget.m_pEntity->entindex()];
-
-	std::vector<TickRecord*> vRecords = {};
-	if (F::Backtrack.GetRecords(tTarget.m_pEntity, vRecords))
-	{
-		if (!vRecords.empty())
-		{
-			for (auto& tRecord : vSimRecords)
-				vRecords.push_back(&tRecord);
-			vRecords = F::Backtrack.GetValidRecords(vRecords, pLocal, true, -TICKS_TO_TIME(vSimRecords.size()));
-		}
-		if (vRecords.empty())
-			return false;
-	}
-	else
-	{
-		F::Backtrack.m_tRecord = { tTarget.m_pEntity->m_flSimulationTime(), tTarget.m_pEntity->m_vecOrigin(), tTarget.m_pEntity->m_vecMins(), tTarget.m_pEntity->m_vecMaxs() };
-		if (!tTarget.m_pEntity->SetupBones(F::Backtrack.m_tRecord.m_aBones, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, tTarget.m_pEntity->m_flSimulationTime()))
+		if (Vars::Aimbot::General::Ignore.Value & Vars::Aimbot::General::IgnoreEnum::Unsimulated && H::Entities.GetChoke(tTarget.m_pEntity->entindex()) > Vars::Aimbot::General::TickTolerance.Value)
 			return false;
 
-		vRecords = { &F::Backtrack.m_tRecord };
-	}
-
-	CGameTrace trace = {};
-	CTraceFilterHitscan filter = {};
-	filter.pSkip = pLocal;
-	for (auto pRecord : vRecords)
-	{
-		Vec3 vRestoreOrigin = tTarget.m_pEntity->GetAbsOrigin();
-		Vec3 vRestoreMins = tTarget.m_pEntity->m_vecMins();
-		Vec3 vRestoreMaxs = tTarget.m_pEntity->m_vecMaxs();
-
-		tTarget.m_pEntity->SetAbsOrigin(pRecord->m_vOrigin);
-		tTarget.m_pEntity->m_vecMins() = pRecord->m_vMins + 0.125f; // account for origin compression
-		tTarget.m_pEntity->m_vecMaxs() = pRecord->m_vMaxs - 0.125f;
-
-		Vec3 vDiff = { 0, 0, std::clamp(m_vEyePos.z - pRecord->m_vOrigin.z, pRecord->m_vMins.z, pRecord->m_vMaxs.z) };
-		tTarget.m_vPos = pRecord->m_vOrigin + vDiff;
-		Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(m_vEyePos, tTarget.m_vPos), tTarget.m_vAngleTo);
-
-		Vec3 vForward; Math::AngleVectors(tTarget.m_vAngleTo, &vForward);
-		Vec3 vTraceEnd = m_vEyePos + (vForward * flRange);
-
-		SDK::TraceHull(m_vEyePos, vTraceEnd, {}, {}, MASK_SOLID, &filter, &trace);
-		bool bReturn = trace.m_pEnt && trace.m_pEnt == tTarget.m_pEntity;
-		if (!bReturn)
+		float flRange = SDK::AttribHookValue(m_flRange, "melee_range_multiplier", pWeapon);
+		float flHull = SDK::AttribHookValue(18, "melee_bounds_multiplier", pWeapon);
+		if (pLocal->m_flModelScale() > 1.0f)
 		{
-			SDK::TraceHull(m_vEyePos, vTraceEnd, vSwingMins, vSwingMaxs, MASK_SOLID, &filter, &trace);
-			bReturn = trace.m_pEnt && trace.m_pEnt == tTarget.m_pEntity;
+			flRange *= pLocal->m_flModelScale();
+			flHull *= pLocal->m_flModelScale();
+		}
+		if (pWeapon->GetWeaponID() == TF_WEAPON_WRENCH && tTarget.m_pEntity->m_iTeamNum() == pLocal->m_iTeamNum())
+		{
+			flRange = 70;
+			flHull = 18;
+		}
+		Vec3 vSwingMins = { -flHull, -flHull, -flHull };
+		Vec3 vSwingMaxs = { flHull, flHull, flHull };
+		auto& vSimRecords = m_mRecordMap[tTarget.m_pEntity->entindex()];
+
+		std::vector<TickRecord*> vRecords = {};
+		if (F::Backtrack.GetRecords(tTarget.m_pEntity, vRecords))
+		{
+			if (!vRecords.empty())
+			{
+				for (auto& tRecord : vSimRecords)
+					vRecords.push_back(&tRecord);
+				vRecords = F::Backtrack.GetValidRecords(vRecords, pLocal, true, -TICKS_TO_TIME(vSimRecords.size()));
+			}
+			if (vRecords.empty())
+				return false;
+		}
+		else
+		{
+			F::Backtrack.m_tRecord = { tTarget.m_pEntity->m_flSimulationTime(), tTarget.m_pEntity->m_vecOrigin(), tTarget.m_pEntity->m_vecMins(), tTarget.m_pEntity->m_vecMaxs(), H::Entities.GetEyeAngles(tTarget.m_pEntity->entindex()) };
+			if (!tTarget.m_pEntity->SetupBones(F::Backtrack.m_tRecord.m_aBones, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, tTarget.m_pEntity->m_flSimulationTime()))
+				return false;
+
+			vRecords = { &F::Backtrack.m_tRecord };
 		}
 
-		if (bReturn && Vars::Aimbot::Melee::AutoBackstab.Value && pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
-			bReturn = CanBackstab(tTarget.m_pEntity, pLocal, tTarget.m_vAngleTo);
+		CGameTrace trace = {};
+		CTraceFilterHitscan filter = {};
+		filter.pSkip = pLocal;
+		for (auto pRecord : vRecords)
+		{
+			Vec3 vRestoreOrigin = tTarget.m_pEntity->GetAbsOrigin();
+			Vec3 vRestoreMins = tTarget.m_pEntity->m_vecMins();
+			Vec3 vRestoreMaxs = tTarget.m_pEntity->m_vecMaxs();
+
+			tTarget.m_pEntity->SetAbsOrigin(pRecord->m_vOrigin);
+			tTarget.m_pEntity->m_vecMins() = pRecord->m_vMins + 0.125f; // account for origin compression
+			tTarget.m_pEntity->m_vecMaxs() = pRecord->m_vMaxs - 0.125f;
+
+			Vec3 vDiff = { 0, 0, std::clamp(m_vEyePos.z - pRecord->m_vOrigin.z, pRecord->m_vMins.z, pRecord->m_vMaxs.z) };
+			tTarget.m_vPos = pRecord->m_vOrigin + vDiff;
+			Aim(G::CurrentUserCmd->viewangles, Math::CalcAngle(m_vEyePos, tTarget.m_vPos), tTarget.m_vAngleTo);
+
+			Vec3 vForward; Math::AngleVectors(tTarget.m_vAngleTo, &vForward);
+			Vec3 vTraceEnd = m_vEyePos + (vForward * flRange);
+
+			SDK::TraceHull(m_vEyePos, vTraceEnd, {}, {}, MASK_SOLID, &filter, &trace);
+			bool bReturn = trace.m_pEnt && trace.m_pEnt == tTarget.m_pEntity;
+			if (!bReturn)
+			{
+				SDK::TraceHull(m_vEyePos, vTraceEnd, vSwingMins, vSwingMaxs, MASK_SOLID, &filter, &trace);
+				bReturn = trace.m_pEnt && trace.m_pEnt == tTarget.m_pEntity;
+			}
+
+			if (bReturn && Vars::Aimbot::Melee::AutoBackstab.Value && pWeapon->GetWeaponID() == TF_WEAPON_KNIFE)
+				bReturn = CanBackstab(tTarget.m_pEntity, pLocal, tTarget.m_vAngleTo, &pRecord->m_vAbsAngles);
 		
-		tTarget.m_pEntity->SetAbsOrigin(vRestoreOrigin);
-		tTarget.m_pEntity->m_vecMins() = vRestoreMins;
-		tTarget.m_pEntity->m_vecMaxs() = vRestoreMaxs;
+			tTarget.m_pEntity->SetAbsOrigin(vRestoreOrigin);
+			tTarget.m_pEntity->m_vecMins() = vRestoreMins;
+			tTarget.m_pEntity->m_vecMaxs() = vRestoreMaxs;
 
-		if (bReturn)
+			if (bReturn)
 		{
 			tTarget.m_pRecord = pRecord;
 			tTarget.m_bBacktrack = tTarget.m_iTargetType == TargetEnum::Player;
