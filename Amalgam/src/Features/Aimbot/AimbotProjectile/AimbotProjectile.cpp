@@ -1876,7 +1876,7 @@ void CAimbotProjectile::Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd*
 {
 	const bool bSuccess = RunMain(pLocal, pWeapon, pCmd);
 #ifdef SPLASH_DEBUG6
-	if (Vars::Aimbot::General::AimType.Value && !s_mTraceCount.empty())
+	if (Vars::Aimbot::General::AimType.Value && !s_mTraceCount.empty() && Vars::Debug::Logging.Value)
 	{
 		int iTraceCount = 0;
 		for (auto& [_, iTraces] : s_mTraceCount)
