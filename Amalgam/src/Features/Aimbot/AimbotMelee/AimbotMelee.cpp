@@ -285,9 +285,9 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CTFPlayer* pLocal, Vec3 vEy
 		return false;
 
 	const float flExtra = 2.f * flCompDist / flDist; // account for origin compression
-	float flPosVsTargetViewMinDot = 0.f + 0.0031f + flExtra;
-	float flPosVsOwnerViewMinDot = 0.5f + flExtra;
-	float flViewAnglesMinDot = -0.3f + 0.0031f; // 0.00306795676297 ?
+	float flPosVsTargetViewMinDot = 0.1f + flExtra;
+	float flPosVsOwnerViewMinDot = 0.6f + flExtra;
+	float flViewAnglesMinDot = -0.1f;
 
 	auto TestDots = [&](Vec3 vTargetAngles)
 		{
@@ -304,7 +304,15 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CTFPlayer* pLocal, Vec3 vEy
 			return flPosVsTargetViewDot > flPosVsTargetViewMinDot && flPosVsOwnerViewDot > flPosVsOwnerViewMinDot && flViewAnglesDot > flViewAnglesMinDot;
 		};
 
-	Vec3 vUseAngles = pTargetAngles ? *pTargetAngles : H::Entities.GetEyeAngles(pTarget->entindex());
+	Vec3 vUseAngles;
+	if (pTargetAngles)
+		vUseAngles = *pTargetAngles;
+	else
+	{
+		const auto& angAbs = pTarget->GetAbsAngles();
+		vUseAngles = { angAbs.x, angAbs.y, angAbs.z };
+	}
+
 	Vec3 vTargetAngles = { 0.f, vUseAngles.y, 0.f };
 	if (!Vars::Aimbot::Melee::BackstabAccountPing.Value)
 	{
@@ -359,7 +367,8 @@ bool CAimbotMelee::CanBackstab(CBaseEntity* pTarget, CTFPlayer* pLocal, Vec3 vEy
 		}
 		else
 		{
-			F::Backtrack.m_tRecord = { tTarget.m_pEntity->m_flSimulationTime(), tTarget.m_pEntity->m_vecOrigin(), tTarget.m_pEntity->m_vecMins(), tTarget.m_pEntity->m_vecMaxs(), H::Entities.GetEyeAngles(tTarget.m_pEntity->entindex()) };
+			const auto& angAbs = tTarget.m_pEntity->GetAbsAngles();
+			F::Backtrack.m_tRecord = { tTarget.m_pEntity->m_flSimulationTime(), tTarget.m_pEntity->m_vecOrigin(), tTarget.m_pEntity->m_vecMins(), tTarget.m_pEntity->m_vecMaxs(), Vec3(angAbs.x, angAbs.y, angAbs.z) };
 			if (!tTarget.m_pEntity->SetupBones(F::Backtrack.m_tRecord.m_aBones, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, tTarget.m_pEntity->m_flSimulationTime()))
 				return false;
 
