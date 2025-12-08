@@ -8,6 +8,11 @@
 #include "../../Visuals/Visuals.h"
 #include "../AutoAirblast/AutoAirblast.h"
 
+static inline const Vec3& GetSimulatedPos(const MoveStorage& tStorage)
+{
+	return tStorage.m_bPredictNetworked ? tStorage.m_vPredictedOrigin : tStorage.m_MoveData.m_vecAbsOrigin;
+}
+
 //#define SPLASH_DEBUG1 // normal splash visualization
 //#define SPLASH_DEBUG2 // obstructed splash visualization
 //#define SPLASH_DEBUG3 // simple splash visualization
@@ -1417,12 +1422,12 @@ int CAimbotProjectile::CanHit(Target_t& tTarget, CTFPlayer* pLocal, CTFWeaponBas
 	Vec3 vAngleTo, vPredicted, vTarget;
 	int iLowestPriority = std::numeric_limits<int>::max(); float flLowestDist = std::numeric_limits<float>::max();
 	int iLowestSmoothPriority = iLowestPriority; float flLowestSmoothDist = flLowestDist;
-	for (int i = 1 - TIME_TO_TICKS(m_tInfo.m_flLatency); i <= iMaxTime; i++)
+	for (int i = -TIME_TO_TICKS(m_tInfo.m_flLatency); i <= iMaxTime; i++)
 	{
 		if (!tStorage.m_bFailed)
 		{
 			F::MoveSim.RunTick(tStorage);
-			tTarget.m_vPos = tStorage.m_MoveData.m_vecAbsOrigin;
+			tTarget.m_vPos = GetSimulatedPos(tStorage);
 		}
 		if (i < 0)
 			continue;
@@ -2104,12 +2109,12 @@ bool CAimbotProjectile::CanHit(Target_t& tTarget, CTFPlayer* pLocal, CTFWeaponBa
 
 	Vec3 vAngleTo, vPredicted, vTarget;
 	int iLowestPriority = std::numeric_limits<int>::max(); float flLowestDist = std::numeric_limits<float>::max();
-	for (int i = 1 - TIME_TO_TICKS(m_tInfo.m_flLatency); i <= iMaxTime; i++)
+	for (int i = -TIME_TO_TICKS(m_tInfo.m_flLatency); i <= iMaxTime; i++)
 	{
 		if (!tStorage.m_bFailed)
 		{
 			F::MoveSim.RunTick(tStorage);
-			tTarget.m_vPos = tStorage.m_MoveData.m_vecAbsOrigin;
+			tTarget.m_vPos = GetSimulatedPos(tStorage);
 		}
 		if (i < 0)
 			continue;
@@ -2135,7 +2140,7 @@ bool CAimbotProjectile::CanHit(Target_t& tTarget, CTFPlayer* pLocal, CTFWeaponBa
 						else
 						{
 							iSplash = Vars::Aimbot::Projectile::SplashPredictionEnum::Off;
-							goto skipSplash;
+							goto skipSplash2;
 						}
 					}
 
@@ -2152,7 +2157,7 @@ bool CAimbotProjectile::CanHit(Target_t& tTarget, CTFPlayer* pLocal, CTFWeaponBa
 				}
 			}
 		}
-		skipSplash:
+		skipSplash2:
 		if (bDirectBreaks && mDirectPoints.empty())
 			break;
 
