@@ -39,7 +39,8 @@ void CMovementSimulation::Store()
 	for (auto pEntity : H::Entities.GetGroup(EntityEnum::PlayerAll))
 	{
 		auto pPlayer = pEntity->As<CTFPlayer>();
-		auto& vRecords = m_mRecords[pPlayer->entindex()];
+		const int iIndex = pPlayer->entindex();
+		auto& vRecords = m_mRecords[iIndex];
 
 		if (!pPlayer->IsAlive() || pPlayer->IsAGhost() || pPlayer->m_vecVelocity().IsZero())
 		{
@@ -103,7 +104,8 @@ void CMovementSimulation::Store()
 	for (auto pEntity : H::Entities.GetGroup(EntityEnum::PlayerAll))
 	{
 		auto pPlayer = pEntity->As<CTFPlayer>();
-		auto& vSimTimes = m_mSimTimes[pPlayer->entindex()];
+		const int iIndex = pPlayer->entindex();
+		auto& vSimTimes = m_mSimTimes[iIndex];
 
 		if (pEntity->entindex() == I::EngineClient->GetLocalPlayer() || !pPlayer->IsAlive() || pPlayer->IsAGhost())
 		{
@@ -111,7 +113,7 @@ void CMovementSimulation::Store()
 			continue;
 		}
 
-		float flDeltaTime = H::Entities.GetDeltaTime(pPlayer->entindex());
+		float flDeltaTime = H::Entities.GetDeltaTime(iIndex);
 		if (!flDeltaTime)
 			continue;
 
@@ -177,6 +179,11 @@ bool CMovementSimulation::Initialize(CBaseEntity* pEntity, MoveStorage& tStorage
 		tStorage.m_bFailed = true;
 		return false;
 	}
+
+	// reserve path storage to avoid per tick reallocations when recording paths
+	tStorage.m_vPath.clear();
+	if (tStorage.m_vPath.capacity() < 128)
+		tStorage.m_vPath.reserve(128);
 
 	const int iStrafeSamples = tStorage.m_bDirectMove
 		? Vars::Aimbot::Projectile::GroundSamples.Value
@@ -667,6 +674,8 @@ void CMovementSimulation::RunTick(MoveStorage& tStorage, bool bPath, std::functi
 	if (tStorage.m_bFailed || !tStorage.m_pPlayer || !tStorage.m_pPlayer->IsPlayer())
 		return;
 
+	const bool bIsLocalPlayer = tStorage.m_pPlayer->entindex() == I::EngineClient->GetLocalPlayer();
+
 	if (bPath)
 		tStorage.m_vPath.push_back(tStorage.m_MoveData.m_vecAbsOrigin);
 
@@ -674,7 +683,8 @@ void CMovementSimulation::RunTick(MoveStorage& tStorage, bool bPath, std::functi
 	I::Prediction->m_bInPrediction = true;
 	I::Prediction->m_bFirstTimePredicted = false;
 	I::GlobalVars->frametime = I::Prediction->m_bEnginePaused ? 0.f : TICK_INTERVAL;
-	SetBounds(tStorage.m_pPlayer);
+	if (!bIsLocalPlayer)
+		SetBounds(tStorage.m_pPlayer);
 
 	float flAppliedYaw = 0.f;
 	if (tStorage.m_flAverageYaw)
@@ -730,7 +740,8 @@ void CMovementSimulation::RunTick(MoveStorage& tStorage, bool bPath, std::functi
 		tStorage.m_MoveData.m_flForwardMove = s_tDummyCmd.forwardmove, tStorage.m_MoveData.m_flSideMove = s_tDummyCmd.sidemove;
 	}
 
-	RestoreBounds(tStorage.m_pPlayer);
+	if (!bIsLocalPlayer)
+		RestoreBounds(tStorage.m_pPlayer);
 }
 
 void CMovementSimulation::RunTick(MoveStorage& tStorage, bool bPath, std::function<void(CMoveData&)> fCallback)
