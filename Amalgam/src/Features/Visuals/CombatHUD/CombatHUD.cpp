@@ -20,9 +20,9 @@ void CCombatHUD::Draw(CTFPlayer* pLocal)
 	const auto& fFont = H::Fonts.GetFont(FONT_INDICATORS);
 	const int nTall = fFont.m_nTall + H::Draw.Scale(1);
 
-	const int iPanelWidth = H::Draw.Scale(280, Scale_Round);
-	const int iPanelPadding = H::Draw.Scale(8, Scale_Round);
-	const int iBarHeight = H::Draw.Scale(18, Scale_Round);
+	const int iPanelWidth = H::Draw.Scale(220, Scale_Round);
+	const int iPanelPadding = H::Draw.Scale(6, Scale_Round);
+	const int iBarHeight = H::Draw.Scale(12, Scale_Round);
 
 	int x = dtPos.x;
 	int y = dtPos.y;
@@ -33,13 +33,18 @@ void CCombatHUD::Draw(CTFPlayer* pLocal)
 	bool bCritBoosted = pLocal->IsCritBoosted();
 	float flTickBase = TICKS_TO_TIME(pLocal->m_nTickBase());
 	bool bStreamingCrits = pWeapon->m_flCritTime() > flTickBase;
+	bool bWeaponCanCrit = F::CritHack.WeaponCanCrit(pWeapon);
 
 	Color_t tCritColor = iCrits > 0 ? Vars::Colors::IndicatorTextGood.Value : Vars::Colors::IndicatorTextBad.Value;
 	H::Draw.StringOutlined(fFont, x - iPanelWidth / 2, y, tCritColor, Vars::Menu::Theme::Background.Value, ALIGN_TOPLEFT, 
 		std::format("CRITS: {}/{}", iCrits, iMaxCrits).c_str());
 
 	int iNextCrit = F::CritHack.GetNextCrit();
-	if (bCritBoosted)
+	if (!bWeaponCanCrit)
+	{
+		H::Draw.StringOutlined(fFont, x + iPanelWidth / 2, y, Vars::Menu::Theme::Inactive.Value, Vars::Menu::Theme::Background.Value, ALIGN_TOPRIGHT, "NO CRITS");
+	}
+	else if (bCritBoosted)
 	{
 		H::Draw.StringOutlined(fFont, x + iPanelWidth / 2, y, Vars::Colors::IndicatorTextMisc.Value, Vars::Menu::Theme::Background.Value, ALIGN_TOPRIGHT, "CRIT BOOSTED");
 	}
@@ -84,26 +89,30 @@ void CCombatHUD::Draw(CTFPlayer* pLocal)
 	int iBarX = x - iPanelWidth / 2;
 	int iBarY = y;
 
-	H::Draw.FillRoundRect(iBarX - 1, iBarY - 1, iPanelWidth + 2, iBarHeight + 2, 5, Color_t(20, 20, 20, 100));
-
-	if (flCritRatio > 0.001f)
+	if (bWeaponCanCrit)
 	{
-		int iBarFillWidth = static_cast<int>(iPanelWidth * flCritRatio);
-		if (iBarFillWidth >= 5)
-		{
-			Color_t tColorStart = Color_t(100, 40, 140, 180);
-			Color_t tColorEnd = Color_t(200, 100, 220, 180);
-			Color_t tFillColor = tColorStart.Lerp(tColorEnd, flCritRatio);
+		H::Draw.FillRoundRect(iBarX - 1, iBarY - 1, iPanelWidth + 2, iBarHeight + 2, 5, Color_t(20, 20, 20, 100));
 
-			H::Draw.FillRoundRect(iBarX, iBarY, iBarFillWidth, iBarHeight, 5, tFillColor);
-		}
-		else if (iBarFillWidth > 0)
+		if (flCritRatio > 0.001f)
 		{
-			H::Draw.FillRect(iBarX, iBarY, iBarFillWidth, iBarHeight, Color_t(200, 100, 220, 180));
+			int iBarFillWidth = static_cast<int>(iPanelWidth * flCritRatio);
+			if (iBarFillWidth >= 5)
+			{
+				Color_t tColorStart = Color_t(100, 40, 140, 180);
+				Color_t tColorEnd = Color_t(200, 100, 220, 180);
+				Color_t tFillColor = tColorStart.Lerp(tColorEnd, flCritRatio);
+
+				H::Draw.FillRoundRect(iBarX, iBarY, iBarFillWidth, iBarHeight, 5, tFillColor);
+			}
+			else if (iBarFillWidth > 0)
+			{
+				H::Draw.FillRect(iBarX, iBarY, iBarFillWidth, iBarHeight, Color_t(200, 100, 220, 180));
+			}
 		}
+		y += iBarHeight + H::Draw.Scale(4, Scale_Round);
 	}
-
-	y += iBarHeight + H::Draw.Scale(4, Scale_Round);
+	else
+		y += H::Draw.Scale(4, Scale_Round);
 
 	int iCurrentDamage = static_cast<int>(F::CritHack.GetRangedDamage()) + F::CritHack.GetMeleeDamage();
 	int iUnsafe = std::abs(F::CritHack.GetDesyncDamage());
