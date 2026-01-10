@@ -950,6 +950,11 @@ void CMenu::MenuVisuals(int iTab)
 				if (Section("Indicators"))
 				{
 					FDropdown(Vars::Menu::Indicators);
+					if (FGet(Vars::Menu::Indicators) & Vars::Menu::IndicatorsEnum::CombatHUD)
+					{
+						if (FSlider(Vars::Menu::CombatHUDScale))
+							H::Fonts.Reload(Vars::Menu::Scale[DEFAULT_BIND]);
+					}
 					if (FSlider(Vars::Menu::Scale))
 						H::Fonts.Reload(Vars::Menu::Scale[DEFAULT_BIND]);
 					FToggle(Vars::Menu::CheapText);

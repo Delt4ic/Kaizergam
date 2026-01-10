@@ -192,6 +192,7 @@ namespace Vars
 		CVar(ConditionsDisplay, "Conditions display", DragBox_t(), VISUAL | NOBIND);
 		CVar(SeedPredictionDisplay, "Seed prediction display", DragBox_t(), VISUAL | NOBIND);
 		CVar(CombatHUDDisplay, "Combat HUD display", DragBox_t(200, 200), VISUAL | NOBIND);
+		CVar(CombatHUDScale, "Combat HUD scale", 1.f, VISUAL | SLIDER_MIN | SLIDER_MAX | SLIDER_PRECISION, 0.5f, 3.f, 0.1f);
 
 		CVar(Scale, "Scale", 1.f, NOBIND | SLIDER_MIN | SLIDER_PRECISION | SLIDER_NOAUTOUPDATE, 0.75f, 2.f, 0.25f);
 		CVar(CheapText, "Cheap text", false);

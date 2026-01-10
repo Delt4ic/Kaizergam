@@ -17,12 +17,13 @@ void CCombatHUD::Draw(CTFPlayer* pLocal)
 		return;
 
 	const DragBox_t dtPos = Vars::Menu::CombatHUDDisplay.Value;
-	const auto& fFont = H::Fonts.GetFont(FONT_INDICATORS);
-	const int nTall = fFont.m_nTall + H::Draw.Scale(1);
+	const float flScale = Vars::Menu::Scale.Value * Vars::Menu::CombatHUDScale.Value;
+	const auto& fFont = H::Fonts.GetFont(FONT_COMBATHUD);
+	const int nTall = fFont.m_nTall + H::Draw.Scale(1, Scale_None, flScale);
 
-	const int iPanelWidth = H::Draw.Scale(220, Scale_Round);
-	const int iPanelPadding = H::Draw.Scale(6, Scale_Round);
-	const int iBarHeight = H::Draw.Scale(12, Scale_Round);
+	const int iPanelWidth = H::Draw.Scale(220, Scale_Round, flScale);
+	const int iPanelPadding = H::Draw.Scale(6, Scale_Round, flScale);
+	const int iBarHeight = H::Draw.Scale(12, Scale_Round, flScale);
 
 	int x = dtPos.x;
 	int y = dtPos.y;
@@ -81,7 +82,7 @@ void CCombatHUD::Draw(CTFPlayer* pLocal)
 		H::Draw.StringOutlined(fFont, x + iPanelWidth / 2, y, Vars::Menu::Theme::Inactive.Value, Vars::Menu::Theme::Background.Value, ALIGN_TOPRIGHT, "NO CRITS");
 	}
 
-	y += nTall + H::Draw.Scale(4, Scale_Round);
+	y += nTall + H::Draw.Scale(4, Scale_Round, flScale);
 
 	static auto tf_weapon_criticals_bucket_cap = H::ConVars.FindVar("tf_weapon_criticals_bucket_cap");
 	const float flBucketCap = tf_weapon_criticals_bucket_cap ? tf_weapon_criticals_bucket_cap->GetFloat() : 1000.f;
@@ -123,10 +124,10 @@ void CCombatHUD::Draw(CTFPlayer* pLocal)
 				H::Draw.FillRect(iBarX, iBarY, iBarFillWidth, iBarHeight, Color_t(200, 100, 220, 180));
 			}
 		}
-		y += iBarHeight + H::Draw.Scale(4, Scale_Round);
+		y += iBarHeight + H::Draw.Scale(4, Scale_Round, flScale);
 	}
 	else
-		y += H::Draw.Scale(4, Scale_Round);
+		y += H::Draw.Scale(4, Scale_Round, flScale);
 
 	int iCurrentDamage = static_cast<int>(F::CritHack.GetRangedDamage()) + F::CritHack.GetMeleeDamage();
 	int iUnsafe = std::abs(F::CritHack.GetDesyncDamage());
@@ -138,7 +139,7 @@ void CCombatHUD::Draw(CTFPlayer* pLocal)
 	H::Draw.StringOutlined(fFont, x + iPanelWidth / 2, y, tUnsafeColor, Vars::Menu::Theme::Background.Value, ALIGN_TOPRIGHT, 
 		std::format("UNSAFE: {}", iUnsafe).c_str());
 
-	y += nTall + H::Draw.Scale(4, Scale_Round);
+	y += nTall + H::Draw.Scale(4, Scale_Round, flScale);
 
 	bool bTickShifting = F::Ticks.m_bDoubletap || F::Ticks.m_bWarp || F::Ticks.m_bSpeedhack;
 	int iChoke = std::max(I::ClientState->chokedcommands - (F::AntiAim.YawOn() ? F::AntiAim.AntiAimTicks() : 0), 0);
@@ -171,7 +172,7 @@ void CCombatHUD::Draw(CTFPlayer* pLocal)
 		H::Draw.StringOutlined(fFont, x + iPanelWidth / 2, y, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, ALIGN_TOPRIGHT, "CHARGING");
 	}
 
-	y += nTall + H::Draw.Scale(4, Scale_Round);
+	y += nTall + H::Draw.Scale(4, Scale_Round, flScale);
 
 	float flTickRatioTarget = iMaxTicks > 0 ? static_cast<float>(iTicks) / iMaxTicks : 0.f;
 
