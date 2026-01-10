@@ -1054,12 +1054,12 @@ void CAimbotProjectile::CalculateAngle(const Vec3& vLocalPos, const Vec3& vTarge
 	int iTimeTo = int(out.m_flTime / TICK_INTERVAL) + 1;
 	if (!m_tInfo.m_vOffset.IsZero())
 	{
-		if (out.m_iCalculated = iTimeTo > iSimTime ? CalculatedEnum::Time : CalculatedEnum::Pending)
+		if (out.m_iCalculated = iTimeTo > iSimTime + 1 ? CalculatedEnum::Time : CalculatedEnum::Pending)
 			return;
 	}
 	else
 	{
-		out.m_iCalculated = iTimeTo > iSimTime ? CalculatedEnum::Time : CalculatedEnum::Good;
+		out.m_iCalculated = iTimeTo > iSimTime + 1 ? CalculatedEnum::Time : CalculatedEnum::Good;
 		return;
 	}
 
@@ -1159,7 +1159,7 @@ void CAimbotProjectile::CalculateAngle(const Vec3& vLocalPos, const Vec3& vTarge
 	}
 
 	iTimeTo = int(out.m_flTime / TICK_INTERVAL) + 1;
-	out.m_iCalculated = iTimeTo > iSimTime ? CalculatedEnum::Time : CalculatedEnum::Good;
+	out.m_iCalculated = iTimeTo > iSimTime + 1 ? CalculatedEnum::Time : CalculatedEnum::Good;
 }
 
 
