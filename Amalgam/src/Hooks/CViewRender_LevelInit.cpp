@@ -3,6 +3,7 @@
 #include "../Features/Visuals/Materials/Materials.h"
 #include "../Features/Visuals/Visuals.h"
 #include "../Features/Backtrack/Backtrack.h"
+#include "../Features/Warp/WarpPrediction.h"
 #include "../Features/Ticks/Ticks.h"
 #include "../Features/NoSpread/NoSpreadHitscan/NoSpreadHitscan.h"
 #include "../Features/CheaterDetection/CheaterDetection.h"
@@ -21,6 +22,7 @@ MAKE_HOOK(CViewRender_LevelInit, U::Memory.GetVirtual(I::ViewRender, 1), void,
 	F::Visuals.OverrideWorldTextures();
 
 	F::Backtrack.Reset();
+	F::WarpPrediction.Initialize();
 	F::Ticks.Reset();
 	F::NoSpreadHitscan.Reset();
 	F::CheaterDetection.Reset();

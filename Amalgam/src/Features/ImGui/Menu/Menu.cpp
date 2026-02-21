@@ -1215,6 +1215,7 @@ void CMenu::MenuMisc(int iTab)
 						FSlider(Vars::Resolver::CyclePitch, FSliderEnum::Right);
 						FToggle(Vars::Resolver::CycleView, FToggleEnum::Left);
 						FToggle(Vars::Resolver::CycleMinwalk, FToggleEnum::Right);
+						FToggle(Vars::Resolver::DontShootIfResolvedUnhittable, FToggleEnum::Left);
 					}
 					PopTransparent();
 				} EndSection();

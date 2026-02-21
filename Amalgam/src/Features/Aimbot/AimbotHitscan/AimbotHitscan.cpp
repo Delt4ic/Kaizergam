@@ -5,6 +5,7 @@
 #include "../../Ticks/Ticks.h"
 #include "../../Visuals/Visuals.h"
 #include "../../Simulation/MovementSimulation/MovementSimulation.h"
+#include "../../Warp/WarpPrediction.h"
 
 static inline std::vector<Target_t> GetTargets(CTFPlayer* pLocal, CTFWeaponBase* pWeapon)
 {
@@ -614,6 +615,16 @@ bool CAimbotHitscan::ShouldFire(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUser
 		}
 	}
 
+	if (tTarget.m_iTargetType == TargetEnum::Player && Vars::Resolver::Enabled.Value && Vars::Resolver::DontShootIfResolvedUnhittable.Value)
+	{
+		Vec3 vRealPos;
+		if (F::Resolver.GetRealHitboxPosition(tTarget.m_pEntity->As<CTFPlayer>(), tTarget.m_nAimedHitbox, vRealPos))
+		{
+			if (!SDK::VisPos(pLocal, tTarget.m_pEntity, m_vEyePos, vRealPos))
+				return false;
+		}
+	}
+
 	return true;
 }
 
@@ -835,6 +846,18 @@ void CAimbotHitscan::Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pC
 
 			if (tTarget.m_bBacktrack)
 				pCmd->tick_count = TIME_TO_TICKS(tTarget.m_pRecord->m_flSimTime) + TIME_TO_TICKS(F::Backtrack.GetFakeInterp());
+		}
+		if (tTarget.m_iTargetType == TargetEnum::Player && F::WarpPrediction.IsWarping(tTarget.m_pEntity->entindex()))
+		{
+			Vec3 vPredictedPos;
+			if (F::WarpPrediction.PredictWarpPosition(tTarget.m_pEntity->entindex(), vPredictedPos))
+			{
+				Vec3 vEyePos = pLocal->GetShootPos();
+				Vec3 vPredictedAngle = Math::CalcAngle(vEyePos, vPredictedPos);
+				tTarget.m_vAngleTo = vPredictedAngle;
+				tTarget.m_vPos = vPredictedPos;
+				tTarget.m_bWarpPredicted = true;
+			}
 		}
 		DrawVisuals(pLocal, tTarget, nWeaponID);
 

@@ -405,6 +405,17 @@ bool CTicks::IsTimingUnsure()
 	return m_bTimingUnsure || m_bSpeedhack /*|| m_bWarp*/;
 }
 
+static Color_t BlendColorsTicks(const Color_t& a, const Color_t& b, float ratio)
+{
+	ratio = std::clamp(ratio, 0.0f, 1.0f);
+	return Color_t(
+		a.r + (b.r - a.r) * ratio,
+		a.g + (b.g - a.g) * ratio,
+		a.b + (b.b - a.b) * ratio,
+		a.a + (b.a - a.a) * ratio
+	);
+}
+
 void CTicks::Draw(CTFPlayer* pLocal)
 {
 	if (!(Vars::Menu::Indicators.Value & Vars::Menu::IndicatorsEnum::Ticks) || !pLocal->IsAlive())
@@ -412,32 +423,74 @@ void CTicks::Draw(CTFPlayer* pLocal)
 
 	const DragBox_t dtPos = Vars::Menu::TicksDisplay.Value;
 	const auto& fFont = H::Fonts.GetFont(FONT_INDICATORS);
+	const int iRounding = H::Draw.Scale(3);
+	const int iBottomPadding = H::Draw.Scale(4, Scale_Round);
+	const int iBarRounding = std::max(1, iRounding / 2);
 
-	if (!m_bSpeedhack)
+	int w = H::Draw.Scale(150, Scale_Round);
+	int h = H::Draw.Scale(24, Scale_Round) + iBottomPadding;
+	int x = dtPos.x - w / 2;
+	int y = dtPos.y;
+
+	H::Draw.FillRoundRect(x, y, w, h, iRounding, Vars::Menu::Theme::Background.Value);
+
+	int barHeight = H::Draw.Scale(3, Scale_Round);
+	int barY = y + h - barHeight - iBottomPadding;
+	int totalBarWidth = w - 2 * iRounding;
+
+	std::string statusText;
+	Color_t textColor = Vars::Menu::Theme::Active.Value;
+	float flRatio = 0.0f;
+	bool bDimBar = false;
+
+	if (m_bSpeedhack)
+	{
+		statusText = std::format("Speedhack x{}", Vars::Speedhack::Amount.Value);
+		textColor = Vars::Colors::IndicatorTextMisc.Value;
+		bDimBar = true;
+	}
+	else
 	{
 		int iAntiAimTicks = F::AntiAim.YawOn() ? F::AntiAim.AntiAimTicks() : 0;
-
 		int iTicks = std::clamp(m_iShiftedTicks + std::max(I::ClientState->chokedcommands - iAntiAimTicks, 0), 0, m_iMaxUsrCmdProcessTicks);
 		int iMax = std::max(m_iMaxUsrCmdProcessTicks - iAntiAimTicks, 0);
 
-		float flRatio = float(iTicks) / float(iMax);
-		int iSizeX = H::Draw.Scale(100, Scale_Round), iSizeY = H::Draw.Scale(12, Scale_Round);
-		int iPosX = dtPos.x - iSizeX / 2, iPosY = dtPos.y + fFont.m_nTall + H::Draw.Scale(4) + 1;
+		flRatio = iMax > 0 ? float(iTicks) / float(iMax) : 0.0f;
+		flRatio = std::clamp(flRatio, 0.0f, 1.0f);
 
-		H::Draw.StringOutlined(fFont, dtPos.x, dtPos.y + 2, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, ALIGN_TOP, std::format("Ticks {} / {}", iTicks, iMax).c_str());
 		if (m_iWait)
-			H::Draw.StringOutlined(fFont, dtPos.x, dtPos.y + fFont.m_nTall + H::Draw.Scale(18, Scale_Round) + 1, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, ALIGN_TOP, "Not Ready");
-
-		H::Draw.LineRoundRect(iPosX, iPosY, iSizeX, iSizeY, H::Draw.Scale(4, Scale_Round), Vars::Menu::Theme::Accent.Value, 16);
-		if (flRatio)
 		{
-			iSizeX -= H::Draw.Scale(2, Scale_Ceil) * 2, iSizeY -= H::Draw.Scale(2, Scale_Ceil) * 2;
-			iPosX += H::Draw.Scale(2, Scale_Round), iPosY += H::Draw.Scale(2, Scale_Round);
-			H::Draw.StartClipping(iPosX, iPosY, iSizeX * flRatio, iSizeY);
-			H::Draw.FillRoundRect(iPosX, iPosY, iSizeX, iSizeY, H::Draw.Scale(3, Scale_Round), Vars::Menu::Theme::Accent.Value, 16);
-			H::Draw.EndClipping();
+			statusText = "Not Ready";
+			textColor = Vars::Menu::Theme::Active.Value;
+			bDimBar = true;
+		}
+		else
+		{
+			statusText = std::format("Ticks {} / {}", iTicks, iMax);
+			textColor = Vars::Colors::IndicatorTextGood.Value;
 		}
 	}
-	else
-		H::Draw.StringOutlined(fFont, dtPos.x, dtPos.y + 2, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, ALIGN_TOP, std::format("Speedhack x{}", Vars::Speedhack::Amount.Value).c_str());
+
+	static float flAnimatedRatio = 0.0f;
+	flAnimatedRatio = flAnimatedRatio + (flRatio - flAnimatedRatio) * std::min(I::GlobalVars->frametime * 11.3f, 1.0f);
+	int barWidth = static_cast<int>(totalBarWidth * flAnimatedRatio);
+
+	Color_t dimmedAccent = BlendColorsTicks(Vars::Menu::Theme::Accent.Value, Vars::Menu::Theme::Background.Value, bDimBar ? 0.7f : 0.5f);
+	H::Draw.FillRoundRect(x + iRounding, barY, totalBarWidth, barHeight, iBarRounding, dimmedAccent);
+
+	if (barWidth > 0 && !bDimBar)
+		H::Draw.FillRoundRect(x + iRounding, barY, barWidth, barHeight, iBarRounding, Vars::Menu::Theme::Accent.Value);
+
+	Color_t borderColor = BlendColorsTicks(Vars::Menu::Theme::Background.Value, Color_t(255, 255, 255, 50), 0.1f);
+	H::Draw.LineRoundRect(x, y, w, h, iRounding, borderColor);
+
+	H::Draw.StringOutlined(
+		fFont,
+		x + H::Draw.Scale(4, Scale_Round),
+		y + (h - barHeight - iBottomPadding) / 2,
+		textColor,
+		Vars::Menu::Theme::Background.Value.Alpha(150),
+		ALIGN_LEFT,
+		statusText.c_str()
+	);
 }

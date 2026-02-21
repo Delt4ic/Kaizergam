@@ -7,6 +7,7 @@
 #include "../Features/CritHack/CritHack.h"
 #include "../Features/Players/PlayerUtils.h"
 #include "../Features/Simulation/MovementSimulation/MovementSimulation.h"
+#include "../Features/Warp/WarpPrediction.h"
 #include "../Features/Spectate/Spectate.h"
 #include "../Features/Visuals/Visuals.h"
 #include "../Features/Visuals/ESP/ESP.h"
@@ -45,6 +46,7 @@ MAKE_HOOK(CHLClient_FrameStageNotify, U::Memory.GetVirtual(I::Client, 35), void,
 
 		F::Backtrack.Store();
 		F::MoveSim.Store();
+		F::WarpPrediction.Update();
 		F::CritHack.Store();
 		F::Aimbot.Store();
 

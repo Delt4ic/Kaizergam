@@ -46,6 +46,7 @@ public:
 	void SetMinwalk(int iUserID, bool bValue);
 	void SetView(int iUserID, bool bValue);
 	bool GetAngles(CTFPlayer* pPlayer, float* pYaw = nullptr, float* pPitch = nullptr, bool* pMinwalk = nullptr, bool bFake = false);
+	bool GetRealHitboxPosition(CTFPlayer* pTarget, int nHitbox, Vec3& vOut);
 	void Reset();
 };
 

@@ -513,6 +513,7 @@ namespace Vars
 		CVar(CyclePitch, "Cycle pitch", 0.f, SLIDER_CLAMP, -180.f, 180.f, 90.f);
 		CVar(CycleView, "Cycle view", false);
 		CVar(CycleMinwalk, "Cycle minwalk", false);
+		CVar(DontShootIfResolvedUnhittable, "Don't shoot if resolved unhittable", false);
 	NAMESPACE_END(Resolver);
 
 	NAMESPACE_BEGIN(CheaterDetection, Cheater Detection)

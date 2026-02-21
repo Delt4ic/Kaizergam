@@ -378,6 +378,39 @@ void CResolver::SetView(int iUserID, bool bValue)
 	F::Output.ReportResolver(I::EngineClient->GetPlayerForUserID(iUserID), "Set", "view", bValue ? "view to local" : "static");
 }
 
+bool CResolver::GetRealHitboxPosition(CTFPlayer* pTarget, int nHitbox, Vec3& vOut)
+{
+	if (!Vars::Resolver::Enabled.Value || !pTarget || !pTarget->IsAlive())
+		return false;
+
+	float flYaw, flPitch;
+	if (!GetAngles(pTarget, &flYaw, &flPitch, nullptr, false))
+		return false;
+
+	const float flOrigYaw = pTarget->m_angEyeAnglesY();
+	const float flOrigPitch = pTarget->m_angEyeAnglesX();
+	pTarget->m_angEyeAnglesY() = flYaw;
+	pTarget->m_angEyeAnglesX() = flPitch;
+
+	G::UpdatingAnims = true;
+	pTarget->UpdateClientSideAnimation();
+	G::UpdatingAnims = false;
+
+	matrix3x4 aBones[MAXSTUDIOBONES];
+	if (!pTarget->SetupBones(aBones, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, pTarget->m_flSimulationTime()))
+	{
+		pTarget->m_angEyeAnglesY() = flOrigYaw;
+		pTarget->m_angEyeAnglesX() = flOrigPitch;
+		return false;
+	}
+
+	vOut = pTarget->GetHitboxCenter(aBones, nHitbox, {});
+
+	pTarget->m_angEyeAnglesY() = flOrigYaw;
+	pTarget->m_angEyeAnglesX() = flOrigPitch;
+	return true;
+}
+
 bool CResolver::GetAngles(CTFPlayer* pPlayer, float* pYaw, float* pPitch, bool* pMinwalk, bool bFake)
 {
 	if (!Vars::Resolver::Enabled.Value)
