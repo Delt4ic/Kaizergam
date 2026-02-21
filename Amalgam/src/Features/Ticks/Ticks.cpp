@@ -458,17 +458,8 @@ void CTicks::Draw(CTFPlayer* pLocal)
 		flRatio = iMax > 0 ? float(iTicks) / float(iMax) : 0.0f;
 		flRatio = std::clamp(flRatio, 0.0f, 1.0f);
 
-		if (m_iWait)
-		{
-			statusText = "Not Ready";
-			textColor = Vars::Menu::Theme::Active.Value;
-			bDimBar = true;
-		}
-		else
-		{
-			statusText = std::format("Ticks {} / {}", iTicks, iMax);
-			textColor = Vars::Colors::IndicatorTextGood.Value;
-		}
+		statusText = std::format("Ticks {} / {}", iTicks, iMax);
+		textColor = Vars::Colors::IndicatorTextGood.Value;
 	}
 
 	static float flAnimatedRatio = 0.0f;
