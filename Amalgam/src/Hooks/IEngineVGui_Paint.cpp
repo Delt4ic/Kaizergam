@@ -48,6 +48,8 @@ MAKE_HOOK(IEngineVGui_Paint, U::Memory.GetVirtual(I::EngineVGui, 14), void,
 			F::Backtrack.Draw(pLocal);
 			F::SpectatorList.Draw(pLocal);
 			F::Visuals.DrawDebugInfo(pLocal);
+			F::Ticks.Draw(pLocal);
+			F::CritHack.Draw(pLocal);
 		}
 		H::Draw.End();
 	}
