@@ -967,11 +967,6 @@ void CMenu::MenuVisuals(int iTab)
 				if (Section("Indicators"))
 				{
 					FDropdown(Vars::Menu::Indicators);
-					if (FGet(Vars::Menu::Indicators) & Vars::Menu::IndicatorsEnum::CombatHUD)
-					{
-						if (FSlider(Vars::Menu::CombatHUDScale))
-							H::Fonts.Reload(Vars::Menu::Scale[DEFAULT_BIND]);
-					}
 					if (FSlider(Vars::Menu::Scale))
 						H::Fonts.Reload(Vars::Menu::Scale[DEFAULT_BIND]);
 					FToggle(Vars::Menu::CheapText);
@@ -3771,7 +3766,6 @@ void CMenu::Render()
 		AddDraggable("Ping", Vars::Menu::PingDisplay, FGet(Vars::Menu::Indicators) & Vars::Menu::IndicatorsEnum::Ping);
 		AddDraggable("Conditions", Vars::Menu::ConditionsDisplay, FGet(Vars::Menu::Indicators) & Vars::Menu::IndicatorsEnum::Conditions);
 		AddDraggable("Seed prediction", Vars::Menu::SeedPredictionDisplay, FGet(Vars::Menu::Indicators) & Vars::Menu::IndicatorsEnum::SeedPrediction);
-		AddDraggable("Combat HUD", Vars::Menu::CombatHUDDisplay, FGet(Vars::Menu::Indicators) & Vars::Menu::IndicatorsEnum::CombatHUD);
 		AddResizableDraggable("Camera", Vars::Visuals::Simulation::ProjectileWindow, FGet(Vars::Visuals::Simulation::ProjectileCamera));
 
 		F::Render.Cursor = GetMouseCursor();
