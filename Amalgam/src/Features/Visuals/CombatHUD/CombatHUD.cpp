@@ -98,7 +98,7 @@ void CCombatHUD::Draw(CTFPlayer* pLocal)
 		iLastWeaponIndex = iWeaponIndex;
 	}
 	const float flLerpSpeed = 0.08f;
-	flCritRatioDisplay = flCritRatioDisplay + (flCritRatioTarget - flCritRatioDisplay) * flLerpSpeed;
+	flCritRatioDisplay = flCritRatioDisplay + (flCritRatioTarget - flCritRatioDisplay) * Math::Clamp(I::GlobalVars->frametime * 11.3f, 0.0f, 1.0f);
 	float flCritRatio = flCritRatioDisplay;
 
 	int iBarX = x - iPanelWidth / 2;

@@ -472,7 +472,7 @@ void CTicks::Draw(CTFPlayer* pLocal)
 	}
 
 	static float flAnimatedRatio = 0.0f;
-	flAnimatedRatio = flAnimatedRatio + (flRatio - flAnimatedRatio) * std::min(I::GlobalVars->frametime * 11.3f, 1.0f);
+	flAnimatedRatio = flAnimatedRatio + (flRatio - flAnimatedRatio) * Clamp(I::GlobalVars->frametime * 11.3f, 0.0f, 1.0f);
 	int barWidth = static_cast<int>(totalBarWidth * flAnimatedRatio);
 
 	Color_t dimmedAccent = BlendColorsTicks(Vars::Menu::Theme::Accent.Value, Vars::Menu::Theme::Background.Value, bDimBar ? 0.7f : 0.5f);

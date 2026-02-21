@@ -581,6 +581,17 @@ static Color_t BlendColors(const Color_t& a, const Color_t& b, float ratio)
 	);
 }
 
+static Color_t BlendColorsTicks(const Color_t& a, const Color_t& b, float ratio)
+{
+	ratio = std::clamp(ratio, 0.0f, 1.0f);
+	return Color_t(
+		a.r + (b.r - a.r) * ratio,
+		a.g + (b.g - a.g) * ratio,
+		a.b + (b.b - a.b) * ratio,
+		a.a + (b.a - a.a) * ratio
+	);
+}
+
 void CCritHack::Draw(CTFPlayer* pLocal)
 {
 	if (!(Vars::Menu::Indicators.Value & Vars::Menu::IndicatorsEnum::CritHack) || !I::EngineClient->IsInGame())
@@ -705,8 +716,7 @@ void CCritHack::Draw(CTFPlayer* pLocal)
 	flRatio = std::clamp(flRatio, 0.0f, 1.0f);
 
 	static float flAnimatedRatio = 0.0f;
-	flAnimatedRatio = flAnimatedRatio + (flRatio - flAnimatedRatio) * std::min(I::GlobalVars->frametime * 11.3f, 1.0f);
-
+	flAnimatedRatio = flAnimatedRatio + (flRatio - flAnimatedRatio) * Clamp(I::GlobalVars->frametime * 11.3f, 0.0f, 1.0f);
 	int barWidth = static_cast<int>((w - 2 * iRounding) * flAnimatedRatio);
 	int totalBarWidth = w - 2 * iRounding;
 
